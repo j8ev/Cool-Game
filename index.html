@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cinema-Themed Dark Mode Tic Tac Toe</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        body {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #121212;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        .menu, .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: rgba(25, 25, 25, 0.9);
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0px 0px 30px rgba(255, 0, 0, 0.8);
+        }
+
+        .menu {
+            gap: 1.5rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #ff2e2e;
+            margin-bottom: 1rem;
+            text-shadow: 0px 0px 10px #ff0000;
+        }
+
+        button {
+            margin-top: 1rem;
+            padding: 0.8rem 2rem;
+            font-size: 1.2rem;
+            background-color: #ff2e2e;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #ff0000;
+        }
+
+        .container {
+            display: none;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+            margin-bottom: 1rem;
+        }
+
+        .cell {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+            background-color: #222;
+            color: #ff2e2e;
+            border: 2px solid #ff2e2e;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .cell:hover {
+            background-color: #ff2e2e;
+            color: #000;
+        }
+
+        .winner {
+            font-size: 1.5rem;
+            text-shadow: 0px 0px 8px #00ff00;
+            color: #00ff00;
+        }
+    </style>
+</head>
+<body>
+    <div class="menu" id="menu">
+        <h1>Welcome to Tic Tac Toe</h1>
+        <button id="playFriend">Play with Friend</button>
+        <button id="playCPU">Play with CPU</button>
+    </div>
+
+    <div class="container" id="container">
+        <h1>Tic Tac Toe</h1>
+        <div class="board" id="board"></div>
+        <div id="winner" class="winner"></div>
+        <button id="restart">Restart Game</button>
+    </div>
+
+    <audio id="clickSound" src="https://www.soundjay.com/button/sounds/button-3.mp3"></audio>
+    <audio id="winSound" src="https://www.soundjay.com/button/sounds/button-10.mp3"></audio>
+
+    <script>
+        const menu = document.getElementById('menu');
+        const container = document.getElementById('container');
+        const board = document.getElementById('board');
+        const winnerDiv = document.getElementById('winner');
+        const restartButton = document.getElementById('restart');
+        const playFriendButton = document.getElementById('playFriend');
+        const playCPUButton = document.getElementById('playCPU');
+        const clickSound = document.getElementById('clickSound');
+        const winSound = document.getElementById('winSound');
+
+        let currentPlayer = 'X';
+        let cells = [];
+        let playWithCPU = false;
+
+        function createBoard() {
+            board.innerHTML = '';
+            cells = [];
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.dataset.index = i;
+                cell.addEventListener('click', handleClick, { once: true });
+                board.appendChild(cell);
+                cells.push(cell);
+            }
+            winnerDiv.textContent = '';
+            currentPlayer = 'X';
+        }
+
+        function handleClick(e) {
+            const cell = e.target;
+            cell.textContent = currentPlayer;
+            clickSound.play();
+            if (checkWin(currentPlayer)) {
+                winnerDiv.textContent = `${currentPlayer} Wins!`;
+                winSound.play();
+                disableBoard();
+                return;
+            }
+            if (isDraw()) {
+                winnerDiv.textContent = `It's a Draw!`;
+                return;
+            }
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            if (playWithCPU && currentPlayer === 'O') {
+                setTimeout(cpuMove, 500);
+            }
+        }
+
+        function cpuMove() {
+            const emptyCells = cells.filter(cell => cell.textContent === '');
+            if (emptyCells.length === 0) return;
+            const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            randomCell.textContent = 'O';
+            randomCell.removeEventListener('click', handleClick);
+            clickSound.play();
+            if (checkWin('O')) {
+                winnerDiv.textContent = `O Wins!`;
+                winSound.play();
+                disableBoard();
+                return;
+            }
+            if (isDraw()) {
+                winnerDiv.textContent = `It's a Draw!`;
+            }
+            currentPlayer = 'X';
+        }
+
+        function checkWin(player) {
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+                [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+                [0, 4, 8], [2, 4, 6]              // Diagonals
+            ];
+            return winPatterns.some(pattern => {
+                return pattern.every(index => cells[index].textContent === player);
+            });
+        }
+
+        function isDraw() {
+            return cells.every(cell => cell.textContent !== '');
+        }
+
+        function disableBoard() {
+            cells.forEach(cell => cell.removeEventListener('click', handleClick));
+        }
+
+        restartButton.addEventListener('click', createBoard);
+        playFriendButton.addEventListener('click', () => {
+            playWithCPU = false;
+            menu.style.display = 'none';
+            container.style.display = 'flex';
+            createBoard();
+        });
+        playCPUButton.addEventListener('click', () => {
+            playWithCPU = true;
+            menu.style.display = 'none';
+            container.style.display = 'flex';
+            createBoard();
+        });
+    </script>
+</body>
+</html>
